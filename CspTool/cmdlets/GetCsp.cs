@@ -10,9 +10,16 @@ namespace amaic.de.csptool.cmdlets
     [Cmdlet(VerbsCommon.Get, "Csp")]
     public class GetCsp : Cmdlet
     {
+        [Parameter(HelpMessage ="Enumerates provider types.")]
+        public SwitchParameter ProviderTypes { get; set; }
+
         protected override void BeginProcessing()
         {
-            WriteObject(Crypt.EnumerateProviderTypes());
+            if (ProviderTypes)
+            {
+                WriteObject(Crypt.EnumerateProviderTypes());
+                return;
+            }
         }
     }
 }

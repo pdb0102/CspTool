@@ -1,0 +1,1 @@
+﻿Start-Process powershell -ArgumentList "-noexit","-Command Import-Module $PWD\bin\Debug\CspTool.dll"
