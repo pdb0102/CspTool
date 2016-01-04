@@ -20,9 +20,15 @@ namespace Versuche
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            foreach(var providerType in Crypt.EnumerateProviderTypes())
+            var providerTypes = Crypt.GetProviderTypes();
+
+            foreach (var providerType in providerTypes.Values)
             {
-                Ausgabe.AppendText($"#{providerType.Key} {providerType.Value} \n");       
+                var defaultProvider = Crypt.GetDefaultProvider(providerType.Id, false);
+                Ausgabe.AppendText($"USER: {providerType.Name} -> {defaultProvider.Name} \n");
+
+                defaultProvider = Crypt.GetDefaultProvider(providerType.Id, true);
+                Ausgabe.AppendText($"MACH: {providerType.Name} -> {defaultProvider.Name} \n");
             }
         }
     }

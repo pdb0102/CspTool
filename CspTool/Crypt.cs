@@ -10,14 +10,7 @@ namespace amaic.de.csptool
 {
     public static class Crypt
     {
-        [DllImport("advapi32.dll", SetLastError = true)]
-        static extern bool CryptEnumProviderTypes(int dwIndex, IntPtr pdwReserved, int dwFlags, ref int pdwProvType, StringBuilder pszTypeName, ref int pcbTypeName);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        static extern bool CryptEnumProviders(int dwIndex, IntPtr pdwReserved, int dwFlags, ref int pdwProvType, StringBuilder pszProvName, ref int pcbProvName);
-
-
-        public static IDictionary<int, ProviderType> EnumerateProviderTypes()
+        public static IDictionary<int, ProviderType> GetProviderTypes()
         {
             var providerTypes = new Dictionary<int, ProviderType>();
 
@@ -38,10 +31,8 @@ namespace amaic.de.csptool
 
         public static IEnumerable<Provider> EnumerateProviders()
         {
-            var providerTypes = EnumerateProviderTypes();
-
-            var providers = new List<Provider>();
-
+            var providerTypes = GetProviderTypes();
+            
             var index = 0;
             var providerTypeId = 0;
             var providerNameLength_Bytes = 0;
@@ -51,10 +42,37 @@ namespace amaic.de.csptool
                 if (CryptEnumProviders(index++, IntPtr.Zero, 0, ref providerTypeId, providerName, ref providerNameLength_Bytes) == false)
                     throw new Win32Exception();
 
-                providers.Add(new Provider(providerName.ToString(), providerTypes[providerTypeId]));
+                yield return new Provider(providerName.ToString(), providerTypes[providerTypeId]);
             }
-
-            return providers;
         }
+
+        public static Provider GetDefaultProvider(int providerTypeId, bool machine)
+        {
+            var flags = machine ? CryptGetDefaultProviderFlags.CRYPT_MACHINE_DEFAULT : CryptGetDefaultProviderFlags.CRYPT_USER_DEFAULT;
+            var defaultProviderNameLength_Bytes = 0;
+            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, flags, null, ref defaultProviderNameLength_Bytes) == false)
+                throw new Win32Exception();
+
+            var defaultProviderName = new StringBuilder(defaultProviderNameLength_Bytes);
+            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, flags, defaultProviderName, ref defaultProviderNameLength_Bytes) == false)
+                throw new Win32Exception();
+
+            var providerTypes = GetProviderTypes();
+
+            return new Provider(defaultProviderName.ToString(), providerTypes[providerTypeId]);
+        }
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool CryptEnumProviderTypes(int dwIndex, IntPtr pdwReserved, int dwFlags, ref int pdwProvType, StringBuilder pszTypeName, ref int pcbTypeName);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool CryptEnumProviders(int dwIndex, IntPtr pdwReserved, int dwFlags, ref int pdwProvType, StringBuilder pszProvName, ref int pcbProvName);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool CryptGetDefaultProvider(int dwProvType, IntPtr pdwReserved, CryptGetDefaultProviderFlags dwFlags, StringBuilder pszProvName, ref int ProvName);
+
+
+        [DllImport("advapi32.dll", CharSet=CharSet.Auto)]
+        static extern bool CryptAcquireContext(ProviderHandle hProv, string pszContainer,  string pszProvider, int dwProvType, CryptAcquireContextFlags dwFlags);
     }
 }

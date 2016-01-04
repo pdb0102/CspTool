@@ -46,8 +46,11 @@
   <ItemGroup>
     <Compile Include="cmdlets\GetCsp.cs" />
     <Compile Include="Crypt.cs" />
+    <Compile Include="CryptGetDefaultProviderFlags.cs" />
+    <Compile Include="CryptAcquireContextFlags.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Provider.cs" />
+    <Compile Include="ProviderHandle.cs" />
     <Compile Include="ProviderType.cs" />
   </ItemGroup>
   <ItemGroup />
