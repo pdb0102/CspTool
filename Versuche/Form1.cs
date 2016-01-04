@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CspTool = amaic.de.csptool;
 
 namespace Versuche
 {
@@ -20,16 +21,21 @@ namespace Versuche
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            var providerTypes = Crypt.GetProviderTypes();
-
-            foreach (var providerType in providerTypes.Values)
+            foreach (var providerType in CspTool.ProviderType.GetProviderTypes().Values)
             {
-                var defaultProvider = Crypt.GetDefaultProvider(providerType.Id, false);
-                Ausgabe.AppendText($"USER: {providerType.Name} -> {defaultProvider.Name} \n");
+                Ausgabe.AppendText($"{providerType}:\n");
 
-                defaultProvider = Crypt.GetDefaultProvider(providerType.Id, true);
-                Ausgabe.AppendText($"MACH: {providerType.Name} -> {defaultProvider.Name} \n");
+                foreach (var container in CspTool.Container.EnuemrateContainers(providerType.Id, true))
+                {
+                    Ausgabe.AppendText($"|-- {container}\n");
+                }
             }
+
+
+            //foreach (var container in CspTool.Container.EnuemrateContainers(1, false))
+            //{
+            //    Ausgabe.AppendText(container.Name + Environment.NewLine);
+            //}
         }
     }
 }

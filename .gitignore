@@ -1,3 +1,4 @@
 .*
+*.sdf
 bin/
 obj/

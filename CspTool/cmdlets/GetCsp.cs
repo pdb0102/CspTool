@@ -17,8 +17,7 @@ namespace amaic.de.csptool.cmdlets
         public SwitchParameter DefaultProvider { get; set; }
 
         [Parameter(ParameterSetName = "DefaultProvider", Position = 1, Mandatory = true, HelpMessage = "Provider type id for which the default provider is requested.")]
-        [ValidateRange(1,99)]
-        public int ProviderTypeId { get; set; }
+        public ProviderType.Ids ProviderTypeId { get; set; }
 
         [Parameter(ParameterSetName = "DefaultProvider", HelpMessage = "Machine scope.")]
         public SwitchParameter Machine { get; set; }
@@ -29,16 +28,16 @@ namespace amaic.de.csptool.cmdlets
         {
             if (ProviderTypes)
             {
-                WriteObject(Crypt.GetProviderTypes());
+                WriteObject(ProviderType.GetProviderTypes());
                 return;
             }
             else if(DefaultProvider)
             {
-                WriteObject(Crypt.GetDefaultProvider(ProviderTypeId, Machine));
+                WriteObject(Provider.GetDefaultProvider(ProviderTypeId, Machine));
                 return;
             }
 
-            foreach (var provider in Crypt.EnumerateProviders())
+            foreach (var provider in Provider.EnumerateProviders())
             {
                 WriteObject(provider);
             }
