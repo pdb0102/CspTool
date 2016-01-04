@@ -33,7 +33,7 @@ namespace amaic.de.csptool.cmdlets
             }
             else if(DefaultProvider)
             {
-                WriteObject(Provider.GetDefaultProvider(ProviderTypeId, Machine));
+                WriteObject(Provider.GetDefaultProvider(ProviderTypeId, Machine ? Scope.Machine : Scope.User));
                 return;
             }
 

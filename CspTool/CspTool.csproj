@@ -50,6 +50,7 @@
     <Compile Include="Provider.cs" />
     <Compile Include="ProviderHandle.cs" />
     <Compile Include="ProviderType.cs" />
+    <Compile Include="Scope.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

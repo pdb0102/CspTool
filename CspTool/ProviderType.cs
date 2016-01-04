@@ -19,10 +19,17 @@ namespace amaic.de.csptool
         public Ids Id { get; private set; }
         public string Name { get; private set; }
 
+        public IEnumerable<Container> GetContainers(Scope scope)
+        {
+            return Container.EnumerateContainers(Id, scope);
+        }
+
         public override string ToString()
         {
             return $"#{(uint)Id:00} {Name}"; 
         }
+
+
 
         public static IDictionary<Ids, ProviderType> GetProviderTypes()
         {

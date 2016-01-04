@@ -19,10 +19,18 @@ namespace amaic.de.csptool
         public string Name { get; private set; }
         public ProviderType ProviderType { get; private set; }
 
+        public IEnumerable<Container> EnumerateContainers(Scope scope)
+        {
+            return Container.EnumerateContainers(this, scope);
+        }
+
         public override string ToString()
         {
             return Name;
         }
+
+
+
 
         public static IEnumerable<Provider> EnumerateProviders()
         {
@@ -41,21 +49,22 @@ namespace amaic.de.csptool
             }
         }
 
-        public static Provider GetDefaultProvider(ProviderType.Ids providerTypeId, bool machine)
+        public static Provider GetDefaultProvider(ProviderType.Ids providerTypeId, Scope scope)
         {
-            var flags = machine ? CryptGetDefaultProviderFlags.CRYPT_MACHINE_DEFAULT : CryptGetDefaultProviderFlags.CRYPT_USER_DEFAULT;
+            var gdpFlags = scope == Scope.Machine ? CryptGetDefaultProviderFlags.CRYPT_MACHINE_DEFAULT : CryptGetDefaultProviderFlags.CRYPT_USER_DEFAULT;
             var defaultProviderNameLength_Bytes = 0;
-            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, flags, null, ref defaultProviderNameLength_Bytes) == false)
+            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, gdpFlags, null, ref defaultProviderNameLength_Bytes) == false)
                 throw new Win32Exception();
 
             var defaultProviderName = new StringBuilder(defaultProviderNameLength_Bytes);
-            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, flags, defaultProviderName, ref defaultProviderNameLength_Bytes) == false)
+            if (CryptGetDefaultProvider(providerTypeId, IntPtr.Zero, gdpFlags, defaultProviderName, ref defaultProviderNameLength_Bytes) == false)
                 throw new Win32Exception();
 
             var providerTypes = ProviderType.GetProviderTypes();
 
             return new Provider(defaultProviderName.ToString(), providerTypes[providerTypeId]);
         }
+
 
         [Flags]
         enum CryptGetDefaultProviderFlags : uint

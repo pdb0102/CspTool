@@ -25,9 +25,9 @@ namespace Versuche
             {
                 Ausgabe.AppendText($"{providerType}:\n");
 
-                foreach (var container in CspTool.Container.EnuemrateContainers(providerType.Id, true))
+                foreach (var container in providerType.GetContainers(Scope.User))
                 {
-                    Ausgabe.AppendText($"|-- {container}\n");
+                    Ausgabe.AppendText($"|-- {container} [{container.Provider}]\n");
                 }
             }
 
