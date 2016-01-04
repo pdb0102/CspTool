@@ -20,6 +20,8 @@ namespace amaic.de.csptool.cmdlets
                 WriteObject(Crypt.EnumerateProviderTypes());
                 return;
             }
+
+            WriteObject(Crypt.EnumerateProviders());
         }
     }
 }
