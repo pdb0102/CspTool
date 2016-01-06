@@ -73,7 +73,7 @@ namespace amaic.de.csptool
             }
         }
 
-        public IEnumerable<Container> GetContainers(Scope scope)
+        public IEnumerable<Container> EnumerateContainers(Scope scope)
         {
             return Container.EnumerateContainers(Id, scope);
         }
@@ -84,6 +84,11 @@ namespace amaic.de.csptool
         }
 
 
+
+        public static IEnumerable<Container> EnumerateContainers(Ids providerTypeId, Scope scope)
+        {
+            return Container.EnumerateContainers(providerTypeId, scope);
+        }
 
         public static IDictionary<Ids, ProviderType> GetProviderTypes()
         {

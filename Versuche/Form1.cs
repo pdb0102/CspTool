@@ -66,7 +66,7 @@ namespace Versuche
             {
                 Ausgabe.AppendText($"{providerType}:{Environment.NewLine}");
 
-                foreach (var container in providerType.GetContainers(Scope.User))
+                foreach (var container in providerType.EnumerateContainers(Scope.User))
                 {
                     Ausgabe.AppendText($"|-- {container} [{container.Provider}]{Environment.NewLine}");
                 }

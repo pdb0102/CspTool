@@ -156,7 +156,7 @@ namespace amaic.de.csptool
 
             return EnumerateContainers(provider.Name, provider.ProviderType.Id, scope);
         }
-        static IEnumerable<Container> EnumerateContainers(string providerName, ProviderType.Ids providerTypeId, Scope scope)
+        public static IEnumerable<Container> EnumerateContainers(string providerName, ProviderType.Ids providerTypeId, Scope scope)
         {
             var acFlags = CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT;
             if (scope == Scope.Machine) acFlags |= CryptAcquireContextFlags.CRYPT_MACHINE_KEYSET;

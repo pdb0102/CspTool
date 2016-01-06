@@ -85,8 +85,6 @@ namespace amaic.de.csptool
         }
 
 
-
-
         public static IEnumerable<Provider> EnumerateProviders()
         {
             var providerTypes = ProviderType.GetProviderTypes();
