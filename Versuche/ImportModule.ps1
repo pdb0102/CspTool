@@ -1,1 +1,1 @@
-﻿Start-Process powershell -ArgumentList "-noexit","-Command Import-Module $PSScriptRoot\bin\Debug\CspTool.dll"
+﻿Start-Process powershell -ArgumentList "-noexit","-Command Import-Module $PSScriptRoot\..\CspTool\bin\Debug\CspTool.dll; Get-Help Get-Csp -Full"

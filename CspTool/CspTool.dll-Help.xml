@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<helpItems xmlns="http://msh" schema="maml">
+
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+
+    <command:details>
+      <command:name>Get-Csp</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>Csp</command:noun>
+      <maml:description>
+        <maml:para>Returns cryptographic service providers, provider types or key containers.</maml:para>        
+      </maml:description>
+    </command:details>
+
+    <maml:description>
+      <maml:para>Without any parameter, returns a list of all known providers.</maml:para>
+      <maml:para>Parameter ProviderTypes returns a list of all known provider types.</maml:para>
+      <maml:para>Parameter DefaultProvider returns the default provider. A provider type id must be specified. Parameter Machine switches scope to MACHINE. Default is USER.</maml:para>
+      <maml:para>Parameter KeyContainers returns a list of key containers. A provider type id must be specified. Parameter Machine switches scope to MACHINE. Default is USER.</maml:para>
+      <maml:para>Parameter Provider returns a list of key containers. A provider must be specified, input via pipeline possible. Parameter Machine switches scope to MACHINE. Default is USER.</maml:para>
+    </maml:description>
+    
+    <command:syntax>
+      
+      <command:syntaxItem>
+        <maml:name>Get-Csp</maml:name>
+      </command:syntaxItem>
+
+      <command:syntaxItem>
+        <maml:name>Get-Csp</maml:name>
+        <command:parameter required="true">
+          <maml:name>ProviderTypes</maml:name>
+        </command:parameter>
+      </command:syntaxItem>
+
+      <command:syntaxItem>
+        <maml:name>Get-Csp</maml:name>
+        <command:parameter required="true">
+          <maml:name>DefaultProvider</maml:name>
+        </command:parameter>
+        <command:parameter required="true" position="1">
+          <maml:name required="false">ProviderTypeId</maml:name>
+          <command:parameterValue required="true">
+            int
+          </command:parameterValue>
+        </command:parameter>
+        <command:parameter>
+          <maml:name>Machine</maml:name>
+        </command:parameter>
+      </command:syntaxItem>
+
+      <command:syntaxItem>
+        <maml:name>Get-Csp</maml:name>
+        <command:parameter required="true">
+          <maml:name>KeyContainers</maml:name>
+        </command:parameter>
+        <command:parameter required="true" position="1">
+          <maml:name required="false">ProviderTypeId</maml:name>
+          <command:parameterValue required="true">
+            int
+          </command:parameterValue>
+        </command:parameter>
+        <command:parameter>
+          <maml:name>Machine</maml:name>
+        </command:parameter>
+      </command:syntaxItem>
+
+      <command:syntaxItem>
+        <maml:name>Get-Csp</maml:name>
+        <command:parameter required="true">
+          <maml:name>Provider</maml:name>
+          <command:parameterValue required="true" pipelineInput="true (ByValue)">
+            amaic.de.csptool.Provider
+          </command:parameterValue>
+        </command:parameter>
+        <command:parameter>
+          <maml:name>Machine</maml:name>
+        </command:parameter>
+      </command:syntaxItem>
+
+    </command:syntax>
+
+    <command:parameters>
+      
+      <command:parameter required="true" position="named" pipelineInput="false" globbing="false">
+        <maml:name>ProviderTypes</maml:name>
+        <maml:description>
+          <maml:para>Returns a list of all known provider types.</maml:para>
+        </maml:description>
+      </command:parameter>
+
+      <command:parameter required="true" position="named" pipelineInput="false" globbing="false">
+        <maml:name>DefaultProvider</maml:name>
+        <maml:description>
+          <maml:para>Returns the default provider.</maml:para>
+        </maml:description>
+      </command:parameter>
+
+      <command:parameter required="true" position="named" pipelineInput="false" globbing="false">
+        <maml:name>KeyContainers</maml:name>
+        <maml:description>
+          <maml:para>Returns a list of key containers.</maml:para>
+        </maml:description>
+      </command:parameter>
+
+      <command:parameter required="true" position="named" pipelineInput="true" globbing="false">
+        <maml:name>Provider</maml:name>
+        <maml:description>
+          <maml:para>Returns a list of key containers.</maml:para>          
+        </maml:description>
+        <dev:type>amaic.de.csptool.Provider</dev:type>
+      </command:parameter>
+
+      <command:parameter required="true" position="1" pipelineInput="false" globbing="false">
+        <maml:name>ProviderTypeId</maml:name>
+        <maml:description>
+          <maml:para>Sets provider type of requested default provider or key container list.</maml:para>
+        </maml:description>
+        <dev:type>int</dev:type>
+        <!--<dev:type>amaic.de.csptool.ProviderType+Ids</dev:type>-->
+      </command:parameter>
+
+      <command:parameter required="false" position="named" pipelineInput="false" globbing="false">
+        <maml:name>Machine</maml:name>
+        <maml:description>
+          <maml:para>Sets scope of request to MACHINE. Default: USER</maml:para>
+        </maml:description>
+      </command:parameter>
+
+    </command:parameters>
+
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>amaic.de.csptool.Provider</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Wrapper of a cryptographic service provider.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    
+    <command:returnValues>
+
+      <command:returnValue>
+        <dev:type>
+          <maml:name>amaic.de.csptool.ProviderType</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Wrapper of an unique provider type identifier.</maml:para>
+        </maml:description>
+      </command:returnValue>
+
+      <command:returnValue>
+        <dev:type>
+          <maml:name>amaic.de.csptool.Provider</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Wrapper of a cryptographic service provider.</maml:para>
+        </maml:description>
+      </command:returnValue>
+
+      <command:returnValue>
+        <dev:type>
+          <maml:name>amaic.de.csptool.Container</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Wrapper of a key container.</maml:para>
+        </maml:description>
+      </command:returnValue>
+
+    </command:returnValues>
+
+    <command:examples>
+      <command:example>
+        <maml:title>Example 1:</maml:title>
+        <dev:code>Get-Csp -DefaultProvider PROV_RSA_FULL|Get-Csp</dev:code>
+        <dev:remarks>
+          <maml:para>Lists all key containers of the default provider of provider type 'RSA Full (Signature and Key Exchange)'.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    
+  </command:command>
+
+</helpItems>
