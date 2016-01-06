@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,14 +13,127 @@ namespace amaic.de.csptool
 {
     public class Container
     {
-        public Container(string name, Provider provider)
+        public Container(string name, Provider provider, Scope scope)
         {
             Name = name;
             Provider = provider;
+            Scope = scope;
         }
 
         public string Name { get; private set; }
         public Provider Provider { get; private set; }
+        public Scope Scope { get; private set; }
+
+        public AsymmetricAlgorithm GetCryptoServiceProvider()
+        {
+            var provider = Provider;
+            var providerType = provider.ProviderType;
+            var providerTypeId = providerType.Id;
+
+            var cspParameter = new CspParameters((int)providerTypeId, provider.Name, Name);
+
+            switch (providerTypeId)
+            {
+                case ProviderType.Ids.PROV_RSA_FULL:
+                case ProviderType.Ids.PROV_RSA_AES:
+                    return new RSACryptoServiceProvider(cspParameter);
+
+                case ProviderType.Ids.PROV_RSA_SCHANNEL:
+
+
+                case ProviderType.Ids.NULL:
+                    
+                case ProviderType.Ids.PROV_RSA_SIG:
+                    
+                case ProviderType.Ids.PROV_DSS:
+                    
+                case ProviderType.Ids.PROV_FORTEZZA:
+                    
+                case ProviderType.Ids.PROV_MS_EXCHANGE:
+                    
+                case ProviderType.Ids.PROV_SSL:
+                    
+                case ProviderType.Ids.PROV_DSS_DH:
+                    
+                case ProviderType.Ids.PROV_EC_ECDSA_SIG:
+                    
+                case ProviderType.Ids.PROV_EC_ECNRA_SIG:
+                    
+                case ProviderType.Ids.PROV_EC_ECDSA_FULL:
+                    
+                case ProviderType.Ids.PROV_EC_ECNRA_FULL:
+                    
+                case ProviderType.Ids.PROV_DH_SCHANNEL:
+                    
+                case ProviderType.Ids.PROV_SPYRUS_LYNKS:
+                    
+                case ProviderType.Ids.PROV_RNG:
+                    
+                case ProviderType.Ids.PROV_INTEL_SEC:
+                    
+                case ProviderType.Ids.PROV_REPLACE_OWF:
+                    
+                    
+                default:
+                    throw new NotImplementedException($"Provider type '{providerType}' not supported.");
+            }
+        }
+
+#if DEBUG
+        public void Versuch2()
+        {
+            var csp = GetCryptoServiceProvider();
+
+            var ausgabedatei =
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    $"test\\{Name}.xml"
+                    );
+
+            using (var ausgabe = new StreamWriter(ausgabedatei, false, Encoding.ASCII))
+            {
+                ausgabe.Write(csp.ToXmlString(false));
+            }
+
+            //using (var ausgabe = new TextWriter(ausgabedatei,FileMode.Create,FileAccess.Write))
+            //{
+            //    var blob = rsa.ToXmlString(false);
+            //    ausgabe.Write(blob, 0, blob.Length);
+            //}
+        }
+
+        public void Versuch1()
+        {
+            var providerHandle = GetProviderHandle(Name, Provider.Name, Provider.ProviderType.Id, CryptAcquireContextFlags.NULL);
+
+            var securityDescriptorLength_Bytes = 0;
+            if (CryptGetSecurityDescriptor(providerHandle, null, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
+                throw new Win32Exception();
+
+            var securityDescriptor = new byte[securityDescriptorLength_Bytes];
+            if (CryptGetSecurityDescriptor(providerHandle, securityDescriptor, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
+                throw new Win32Exception();
+
+            providerHandle.Dispose();
+
+            var securityDescriptorControl = SecurityDescriptorControl.NULL;
+            var revision = 0;
+            if (GetSecurityDescriptorControl(securityDescriptor, ref securityDescriptorControl, ref revision) == false)
+                throw new Win32Exception();
+
+            var stringSecurityDescriptor = new StringBuilder();
+            var stringSecurityDescriptorLength_Bytes = 0L;
+            if (ConvertSecurityDescriptorToStringSecurityDescriptor(securityDescriptor, SDDL_REVISION_1, SecurityInformation.OWNER_SECURITY_INFORMATION, ref stringSecurityDescriptor, ref stringSecurityDescriptorLength_Bytes) == false)
+                throw new Win32Exception();
+
+            IntPtr securityDescriptorOwner;
+            bool defaulted;
+            if (GetSecurityDescriptorOwner(securityDescriptor, out securityDescriptorOwner, out defaulted) == false)
+                throw new Win32Exception();
+
+            var s = new SecurityIdentifier(securityDescriptorOwner);
+        }
+#endif
 
         public override string ToString()
         {
@@ -42,52 +158,60 @@ namespace amaic.de.csptool
         }
         static IEnumerable<Container> EnumerateContainers(string providerName, ProviderType.Ids providerTypeId, Scope scope)
         {
-            ProviderHandle providerHandle;
             var acFlags = CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT;
             if (scope == Scope.Machine) acFlags |= CryptAcquireContextFlags.CRYPT_MACHINE_KEYSET;
-            if (CryptAcquireContext(out providerHandle, null, providerName, providerTypeId, acFlags) == false)
-                throw new Win32Exception();
+
+            var providerHandle = GetProviderHandle(null, providerName, providerTypeId, acFlags);
 
             var containerNameMaxLength_Bytes = 0;
-            if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_ENUMCONTAINERS, null, ref containerNameMaxLength_Bytes, CryptGetProvParamFlags.CRYPT_FIRST) == false)
+            if (CryptEnumerateContainerNames(providerHandle, null, ref containerNameMaxLength_Bytes, EnumerationFlags.CRYPT_FIRST) == false)
                 throw new Win32Exception();
 
             var providerTypes = ProviderType.GetProviderTypes();
 
             var containerName = new byte[containerNameMaxLength_Bytes];
-            var gppFlags = CryptGetProvParamFlags.CRYPT_FIRST;
-            while (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_ENUMCONTAINERS, containerName, ref containerNameMaxLength_Bytes, gppFlags))
+            var gppFlags = EnumerationFlags.CRYPT_FIRST;
+            while (CryptEnumerateContainerNames(providerHandle, containerName, ref containerNameMaxLength_Bytes, gppFlags))
             {
-                yield return 
+                yield return
                     new Container(
                         Encoding.ASCII.GetString(containerName).TrimEnd('\0'),
                         new Provider(
-                            GetProviderName(providerHandle), 
+                            GetProviderName(providerHandle),
                             providerTypes[providerTypeId]
-                            )
+                            ),
+                        scope
                         );
 
                 Array.Clear(containerName, 0, containerName.Length);
-                gppFlags = CryptGetProvParamFlags.CRYPT_NEXT;
+                gppFlags = EnumerationFlags.CRYPT_NEXT;
             }
 
             providerHandle.Dispose();
         }
-
 
         static string GetProviderName(ProviderHandle providerHandle)
         {
             if (providerHandle == null) throw new ArgumentNullException(nameof(providerHandle));
 
             var providerNameLength_Bytes = 0;
-            if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_NAME, null, ref providerNameLength_Bytes, CryptGetProvParamFlags.NULL) == false)
+            if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_NAME, null, ref providerNameLength_Bytes, 0) == false)
                 throw new Win32Exception();
 
             var providerName = new byte[providerNameLength_Bytes];
-            if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_NAME, providerName, ref providerNameLength_Bytes, CryptGetProvParamFlags.NULL) == false)
+            if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_NAME, providerName, ref providerNameLength_Bytes, 0) == false)
                 throw new Win32Exception();
 
             return Encoding.ASCII.GetString(providerName).TrimEnd('\0');
+        }
+
+        static ProviderHandle GetProviderHandle(string containerName, string providerName, ProviderType.Ids providerTypeId, CryptAcquireContextFlags acFlags)
+        {
+            ProviderHandle providerHandle;
+            if (CryptAcquireContext(out providerHandle, containerName, providerName, providerTypeId, acFlags) == false)
+                throw new Win32Exception();
+
+            return providerHandle;
         }
 
         [Flags]
@@ -103,12 +227,22 @@ namespace amaic.de.csptool
         }
 
         [Flags]
-        enum CryptGetProvParamFlags : uint
+        enum EnumerationFlags : uint
         {
             NULL = 0,
             CRYPT_FIRST = 1,
             CRYPT_NEXT = 2,
             CRYPT_SGC_ENUM = 4
+        }
+
+        [Flags]
+        enum SecurityDescriptorFlags : uint
+        {
+            NULL = 0,
+            OWNER_SECURITY_INFORMATION = 0x00000001,
+            GROUP_SECURITY_INFORMATION = 0x00000002,
+            DACL_SECURITY_INFORMATION = 0x00000004,
+            SACL_SECURITY_INFORMATION = 0x00000008
         }
 
         enum CryptGetProvParamParameterTypes : uint
@@ -152,10 +286,71 @@ namespace amaic.de.csptool
             PP_SMARTCARD_READER_ICON = 47
         }
 
+        enum SecurityDescriptorControl : ushort
+        {
+            NULL = 0,
+            SE_OWNER_DEFAULTED = 0x0001,
+            SE_GROUP_DEFAULTED = 0x0002,
+            SE_DACL_PRESENT = 0x0004,
+            SE_DACL_DEFAULTED = 0x0008,
+            SE_SACL_PRESENT = 0x0010,
+            SE_SACL_DEFAULTED = 0x0020,
+            SE_DACL_AUTO_INHERIT_REQ = 0x0100,
+            SE_SACL_AUTO_INHERIT_REQ = 0x0200,
+            SE_DACL_AUTO_INHERITED = 0x0400,
+            SE_SACL_AUTO_INHERITED = 0x0800,
+            SE_DACL_PROTECTED = 0x1000,
+            SE_SACL_PROTECTED = 0x2000,
+            SE_RM_CONTROL_VALID = 0x4000,
+            SE_SELF_RELATIVE = 0x8000
+        }
+
+        const int SDDL_REVISION_1 = 1;
+
+        enum SecurityInformation : uint
+        {
+            NULL = 0,
+            OWNER_SECURITY_INFORMATION = 0x00000001,
+            GROUP_SECURITY_INFORMATION = 0x00000002,
+            DACL_SECURITY_INFORMATION = 0x00000004,
+            SACL_SECURITY_INFORMATION = 0x00000008,
+            LABEL_SECURITY_INFORMATION = 0x00000010,
+            ATTRIBUTE_SECURITY_INFORMATION = 0x00000020,
+            SCOPE_SECURITY_INFORMATION = 0x00000040,
+            PROCESS_TRUST_LABEL_SECURITY_INFORMATION = 0x00000080,
+            BACKUP_SECURITY_INFORMATION = 0x00010000,
+
+            PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000,
+            PROTECTED_SACL_SECURITY_INFORMATION = 0x40000000,
+            UNPROTECTED_DACL_SECURITY_INFORMATION = 0x20000000,
+            UNPROTECTED_SACL_SECURITY_INFORMATION = 0x10000000
+        }
+
         [DllImport("advapi32.dll", SetLastError = true)]
         static extern bool CryptAcquireContext(out ProviderHandle hProv, string pszContainer, string pszProvider, ProviderType.Ids dwProvType, CryptAcquireContextFlags dwFlags);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        static extern bool CryptGetProvParam(ProviderHandle hProv, CryptGetProvParamParameterTypes dwParam, [Out] byte[] pbData, ref int dwDataLen, CryptGetProvParamFlags dwFlags);
+        static extern bool CryptGetProvParam(ProviderHandle hProv, CryptGetProvParamParameterTypes dwParam, [Out] byte[] pbData, ref int dwDataLen, uint dwFlags);
+        static bool CryptEnumerateContainerNames(ProviderHandle providerHandle, byte[] containerName, ref int containerNameLength_Bytes, EnumerationFlags flags)
+        {
+            return CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_ENUMCONTAINERS, containerName, ref containerNameLength_Bytes, (uint)flags);
+        }
+        static bool CryptGetSecurityDescriptor(ProviderHandle providerHandle, byte[] securityDescriptor, ref int securityDescriptorLength_Bytes, SecurityDescriptorFlags flags)
+        {
+            return CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_KEYSET_SEC_DESCR, securityDescriptor, ref securityDescriptorLength_Bytes, (uint)flags);
+        }
+
+
+        [DllImport("advapi32.dll")]
+	    static extern Int32 GetSecurityDescriptorLength(byte[] pSecurityDescriptor);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool GetSecurityDescriptorControl(byte[] pSecurityDescriptor, ref SecurityDescriptorControl pControl, ref int lpdwRevision);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool GetSecurityDescriptorOwner(byte[] pSecurityDescriptor, out IntPtr pOwner, out bool lpbOwnerDefaulted);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool ConvertSecurityDescriptorToStringSecurityDescriptor(byte[] SecurityDescriptor, int RequestedStringSDRevision, SecurityInformation SecurityInformation, ref StringBuilder StringSecurityDescriptor, ref long StringSecurityDescriptorLen);
     }
 }

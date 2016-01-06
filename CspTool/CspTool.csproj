@@ -51,6 +51,7 @@
     <Compile Include="ProviderHandle.cs" />
     <Compile Include="ProviderType.cs" />
     <Compile Include="Scope.cs" />
+    <Compile Include="SecurityDescriptor.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

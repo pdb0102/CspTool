@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,6 +19,59 @@ namespace amaic.de.csptool
 
         public Ids Id { get; private set; }
         public string Name { get; private set; }
+
+        public AsymmetricAlgorithm GetCryptoServiceProvider()
+        {
+            var providerTypeId = Id;
+
+            var cspParameter = new CspParameters((int)providerTypeId);
+
+            switch (providerTypeId)
+            {
+                case ProviderType.Ids.PROV_RSA_FULL:
+                case ProviderType.Ids.PROV_RSA_AES:
+                    return new RSACryptoServiceProvider(cspParameter);
+
+                case ProviderType.Ids.PROV_RSA_SCHANNEL:
+
+
+                case ProviderType.Ids.NULL:
+
+                case ProviderType.Ids.PROV_RSA_SIG:
+
+                case ProviderType.Ids.PROV_DSS:
+
+                case ProviderType.Ids.PROV_FORTEZZA:
+
+                case ProviderType.Ids.PROV_MS_EXCHANGE:
+
+                case ProviderType.Ids.PROV_SSL:
+
+                case ProviderType.Ids.PROV_DSS_DH:
+
+                case ProviderType.Ids.PROV_EC_ECDSA_SIG:
+
+                case ProviderType.Ids.PROV_EC_ECNRA_SIG:
+
+                case ProviderType.Ids.PROV_EC_ECDSA_FULL:
+
+                case ProviderType.Ids.PROV_EC_ECNRA_FULL:
+
+                case ProviderType.Ids.PROV_DH_SCHANNEL:
+
+                case ProviderType.Ids.PROV_SPYRUS_LYNKS:
+
+                case ProviderType.Ids.PROV_RNG:
+
+                case ProviderType.Ids.PROV_INTEL_SEC:
+
+                case ProviderType.Ids.PROV_REPLACE_OWF:
+
+
+                default:
+                    throw new NotImplementedException($"Provider type '{this}' not supported.");
+            }
+        }
 
         public IEnumerable<Container> GetContainers(Scope scope)
         {
