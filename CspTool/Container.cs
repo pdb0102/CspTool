@@ -79,6 +79,39 @@ namespace amaic.de.csptool
             }
         }
 
+        public string UniqueName
+        {
+            get
+            {
+                var acFlags = CryptAcquireContextFlags.NULL;
+                if (Scope == Scope.Machine) acFlags |= CryptAcquireContextFlags.CRYPT_MACHINE_KEYSET;
+
+                var providerHandle = GetProviderHandle(acFlags);
+
+                var uniqueKeyContainerNameLength_Bytes = 0;
+                if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_UNIQUE_CONTAINER, null, ref uniqueKeyContainerNameLength_Bytes, 0) == false)
+                    throw new Win32Exception();
+
+                var uniqueKeyContainerName = new byte[uniqueKeyContainerNameLength_Bytes];
+                if (CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_UNIQUE_CONTAINER, uniqueKeyContainerName, ref uniqueKeyContainerNameLength_Bytes, 0) == false)
+                    throw new Win32Exception();
+
+                providerHandle.Dispose();
+
+                return Encoding.ASCII.GetString(uniqueKeyContainerName).Trim('\0');                
+            }
+        }
+
+        ProviderHandle GetProviderHandle(CryptAcquireContextFlags flags)
+        {
+            ProviderHandle providerHandle;
+
+            if (CryptAcquireContext(out providerHandle, Name, Provider.Name, Provider.ProviderType.Id, flags) == false)
+                throw new Win32Exception();
+
+            return providerHandle;
+        }
+
 #if DEBUG
         public void Versuch2()
         {
