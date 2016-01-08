@@ -24,61 +24,6 @@ namespace amaic.de.csptool
         public Provider Provider { get; private set; }
         public Scope Scope { get; private set; }
 
-        public AsymmetricAlgorithm GetCryptoServiceProvider()
-        {
-            var provider = Provider;
-            var providerType = provider.ProviderType;
-            var providerTypeId = providerType.Id;
-
-            var cspParameter = new CspParameters((int)providerTypeId, provider.Name, Name);
-
-            switch (providerTypeId)
-            {
-                case ProviderType.Ids.PROV_RSA_FULL:
-                case ProviderType.Ids.PROV_RSA_AES:
-                    return new RSACryptoServiceProvider(cspParameter);
-
-                case ProviderType.Ids.PROV_RSA_SCHANNEL:
-
-
-                case ProviderType.Ids.NULL:
-                    
-                case ProviderType.Ids.PROV_RSA_SIG:
-                    
-                case ProviderType.Ids.PROV_DSS:
-                    
-                case ProviderType.Ids.PROV_FORTEZZA:
-                    
-                case ProviderType.Ids.PROV_MS_EXCHANGE:
-                    
-                case ProviderType.Ids.PROV_SSL:
-                    
-                case ProviderType.Ids.PROV_DSS_DH:
-                    
-                case ProviderType.Ids.PROV_EC_ECDSA_SIG:
-                    
-                case ProviderType.Ids.PROV_EC_ECNRA_SIG:
-                    
-                case ProviderType.Ids.PROV_EC_ECDSA_FULL:
-                    
-                case ProviderType.Ids.PROV_EC_ECNRA_FULL:
-                    
-                case ProviderType.Ids.PROV_DH_SCHANNEL:
-                    
-                case ProviderType.Ids.PROV_SPYRUS_LYNKS:
-                    
-                case ProviderType.Ids.PROV_RNG:
-                    
-                case ProviderType.Ids.PROV_INTEL_SEC:
-                    
-                case ProviderType.Ids.PROV_REPLACE_OWF:
-                    
-                    
-                default:
-                    throw new NotImplementedException($"Provider type '{providerType}' not supported.");
-            }
-        }
-
         public string UniqueName
         {
             get
@@ -102,6 +47,17 @@ namespace amaic.de.csptool
             }
         }
 
+        public string FilePath
+        {
+            get
+            {
+                return Path.Combine(
+                    GetKeyDiretory(GetKeyType(), GetRsaDss()),
+                    UniqueName
+                    );
+            }
+        }
+
         ProviderHandle GetProviderHandle(CryptAcquireContextFlags flags)
         {
             ProviderHandle providerHandle;
@@ -112,61 +68,99 @@ namespace amaic.de.csptool
             return providerHandle;
         }
 
-#if DEBUG
-        public void Versuch2()
+        KeyTypes GetKeyType()
         {
-            var csp = GetCryptoServiceProvider();
+            return Scope == Scope.Machine ? KeyTypes.LocalSystemPrivate : KeyTypes.UserPrivate;
+        }
 
-            var ausgabedatei =
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    $"test\\{Name}.xml"
-                    );
-
-            using (var ausgabe = new StreamWriter(ausgabedatei, false, Encoding.ASCII))
+        RsaDss GetRsaDss()
+        {
+            var providerTypeId = Provider.ProviderType.Id;
+            switch (providerTypeId)
             {
-                ausgabe.Write(csp.ToXmlString(false));
+                case ProviderType.Ids.PROV_RSA_FULL:
+                case ProviderType.Ids.PROV_RSA_SIG:
+                case ProviderType.Ids.PROV_RSA_SCHANNEL:
+                case ProviderType.Ids.PROV_RSA_AES:
+                    return RsaDss.RSA;
+
+                case ProviderType.Ids.PROV_DSS:
+                case ProviderType.Ids.PROV_DSS_DH:
+                    return RsaDss.DSS;
+
+                case ProviderType.Ids.PROV_FORTEZZA:
+                case ProviderType.Ids.PROV_MS_EXCHANGE:
+                case ProviderType.Ids.PROV_SSL:
+                case ProviderType.Ids.PROV_EC_ECDSA_SIG:
+                case ProviderType.Ids.PROV_EC_ECNRA_SIG:
+                case ProviderType.Ids.PROV_EC_ECDSA_FULL:
+                case ProviderType.Ids.PROV_EC_ECNRA_FULL:
+                case ProviderType.Ids.PROV_DH_SCHANNEL:
+                case ProviderType.Ids.PROV_SPYRUS_LYNKS:
+                case ProviderType.Ids.PROV_RNG:
+                case ProviderType.Ids.PROV_INTEL_SEC:
+                case ProviderType.Ids.PROV_REPLACE_OWF:
+                case ProviderType.Ids.NULL:
+                default:
+                    throw new NotImplementedException();
             }
 
-            //using (var ausgabe = new TextWriter(ausgabedatei,FileMode.Create,FileAccess.Write))
-            //{
-            //    var blob = rsa.ToXmlString(false);
-            //    ausgabe.Write(blob, 0, blob.Length);
-            //}
         }
 
-        public void Versuch1()
+        AsymmetricAlgorithm GetCryptoServiceProvider()
         {
-            var providerHandle = GetProviderHandle(Name, Provider.Name, Provider.ProviderType.Id, CryptAcquireContextFlags.NULL);
+            var provider = Provider;
+            var providerType = provider.ProviderType;
+            var providerTypeId = providerType.Id;
 
-            var securityDescriptorLength_Bytes = 0;
-            if (CryptGetSecurityDescriptor(providerHandle, null, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
-                throw new Win32Exception();
+            var cspParameter = new CspParameters((int)providerTypeId, provider.Name, Name);
 
-            var securityDescriptor = new byte[securityDescriptorLength_Bytes];
-            if (CryptGetSecurityDescriptor(providerHandle, securityDescriptor, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
-                throw new Win32Exception();
+            switch (providerTypeId)
+            {
+                case ProviderType.Ids.PROV_RSA_FULL:
+                case ProviderType.Ids.PROV_RSA_AES:
+                    return new RSACryptoServiceProvider(cspParameter);
 
-            providerHandle.Dispose();
+                case ProviderType.Ids.PROV_RSA_SCHANNEL:
 
-            var securityDescriptorControl = SecurityDescriptorControl.NULL;
-            var revision = 0;
-            if (GetSecurityDescriptorControl(securityDescriptor, ref securityDescriptorControl, ref revision) == false)
-                throw new Win32Exception();
 
-            var stringSecurityDescriptor = new StringBuilder();
-            var stringSecurityDescriptorLength_Bytes = 0L;
-            if (ConvertSecurityDescriptorToStringSecurityDescriptor(securityDescriptor, SDDL_REVISION_1, SecurityInformation.OWNER_SECURITY_INFORMATION, ref stringSecurityDescriptor, ref stringSecurityDescriptorLength_Bytes) == false)
-                throw new Win32Exception();
+                case ProviderType.Ids.NULL:
 
-            IntPtr securityDescriptorOwner;
-            bool defaulted;
-            if (GetSecurityDescriptorOwner(securityDescriptor, out securityDescriptorOwner, out defaulted) == false)
-                throw new Win32Exception();
+                case ProviderType.Ids.PROV_RSA_SIG:
 
-            var s = new SecurityIdentifier(securityDescriptorOwner);
+                case ProviderType.Ids.PROV_DSS:
+
+                case ProviderType.Ids.PROV_FORTEZZA:
+
+                case ProviderType.Ids.PROV_MS_EXCHANGE:
+
+                case ProviderType.Ids.PROV_SSL:
+
+                case ProviderType.Ids.PROV_DSS_DH:
+
+                case ProviderType.Ids.PROV_EC_ECDSA_SIG:
+
+                case ProviderType.Ids.PROV_EC_ECNRA_SIG:
+
+                case ProviderType.Ids.PROV_EC_ECDSA_FULL:
+
+                case ProviderType.Ids.PROV_EC_ECNRA_FULL:
+
+                case ProviderType.Ids.PROV_DH_SCHANNEL:
+
+                case ProviderType.Ids.PROV_SPYRUS_LYNKS:
+
+                case ProviderType.Ids.PROV_RNG:
+
+                case ProviderType.Ids.PROV_INTEL_SEC:
+
+                case ProviderType.Ids.PROV_REPLACE_OWF:
+
+
+                default:
+                    throw new NotImplementedException($"Provider type '{providerType}' not supported.");
+            }
         }
-#endif
 
         public override string ToString()
         {
@@ -245,6 +239,72 @@ namespace amaic.de.csptool
                 throw new Win32Exception();
 
             return providerHandle;
+        }
+
+        public static string GetKeyDiretory(KeyTypes keyType, RsaDss rsaDss)
+        {
+            var rsaDssSubfolder = rsaDss == RsaDss.RSA ? "RSA" : "DSS";
+
+            switch (keyType)
+            {
+                case KeyTypes.UserPrivate:
+                    return Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        @"Microsoft\Crypto",
+                        rsaDssSubfolder,
+                        WindowsIdentity.GetCurrent().User.Value
+                        );
+
+                case KeyTypes.LocalSystemPrivate:
+                    return Path.Combine(
+                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
+                        @"Microsoft\Crypto",
+                        rsaDssSubfolder,
+                        "S-1-5-18"
+                        );
+
+                case KeyTypes.LocalServicePrivate:
+                    return Path.Combine(
+                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
+                        @"Microsoft\Crypto",
+                        rsaDssSubfolder,
+                        "S-1-5-19"
+                        );
+
+                case KeyTypes.NetworkServicePrivate:
+                    return Path.Combine(
+                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
+                        @"Microsoft\Crypto",
+                        rsaDssSubfolder,
+                        "S-1-5-20"
+                        );
+
+                case KeyTypes.SharedPrivate:
+                    return Path.Combine(
+                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
+                        @"Microsoft\Crypto",
+                        rsaDssSubfolder,
+                        "MachineKeys"
+                        );
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public enum KeyTypes
+        {
+            UserPrivate,
+            LocalSystemPrivate,
+            LocalServicePrivate,
+            NetworkServicePrivate,
+            SharedPrivate
+        }
+
+        public enum RsaDss
+        {
+            RSA,
+            DSS
         }
 
         [Flags]
@@ -373,7 +433,6 @@ namespace amaic.de.csptool
             return CryptGetProvParam(providerHandle, CryptGetProvParamParameterTypes.PP_KEYSET_SEC_DESCR, securityDescriptor, ref securityDescriptorLength_Bytes, (uint)flags);
         }
 
-
         [DllImport("advapi32.dll")]
 	    static extern Int32 GetSecurityDescriptorLength(byte[] pSecurityDescriptor);
 
@@ -385,5 +444,42 @@ namespace amaic.de.csptool
 
         [DllImport("advapi32.dll", SetLastError = true)]
         static extern bool ConvertSecurityDescriptorToStringSecurityDescriptor(byte[] SecurityDescriptor, int RequestedStringSDRevision, SecurityInformation SecurityInformation, ref StringBuilder StringSecurityDescriptor, ref long StringSecurityDescriptorLen);
+
+
+#if DEBUG
+        public void Versuch1()
+        {
+            var providerHandle = GetProviderHandle(Name, Provider.Name, Provider.ProviderType.Id, CryptAcquireContextFlags.NULL);
+
+            var securityDescriptorLength_Bytes = 0;
+            if (CryptGetSecurityDescriptor(providerHandle, null, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
+                throw new Win32Exception();
+
+            var securityDescriptor = new byte[securityDescriptorLength_Bytes];
+            if (CryptGetSecurityDescriptor(providerHandle, securityDescriptor, ref securityDescriptorLength_Bytes, SecurityDescriptorFlags.OWNER_SECURITY_INFORMATION) == false)
+                throw new Win32Exception();
+
+            providerHandle.Dispose();
+
+            var securityDescriptorControl = SecurityDescriptorControl.NULL;
+            var revision = 0;
+            if (GetSecurityDescriptorControl(securityDescriptor, ref securityDescriptorControl, ref revision) == false)
+                throw new Win32Exception();
+
+            var stringSecurityDescriptor = new StringBuilder();
+            var stringSecurityDescriptorLength_Bytes = 0L;
+            if (ConvertSecurityDescriptorToStringSecurityDescriptor(securityDescriptor, SDDL_REVISION_1, SecurityInformation.OWNER_SECURITY_INFORMATION, ref stringSecurityDescriptor, ref stringSecurityDescriptorLength_Bytes) == false)
+                throw new Win32Exception();
+
+            IntPtr securityDescriptorOwner;
+            bool defaulted;
+            if (GetSecurityDescriptorOwner(securityDescriptor, out securityDescriptorOwner, out defaulted) == false)
+                throw new Win32Exception();
+
+            var s = new SecurityIdentifier(securityDescriptorOwner);
+        }
+#endif
+
     }
 }
+
