@@ -6,6 +6,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -26,12 +27,24 @@ namespace Versuche
         private void Form1_Load(object sender, EventArgs e)
         {
 #if DEBUG
-            Versuch7();
+            Versuch8();
 #endif
         }
 
 
 #if DEBUG
+        private void Versuch9()
+        {
+        }
+
+        private void Versuch8()
+        {
+            foreach (var provider in Provider.EnumerateProviders())
+            {
+                Ausgabe.AppendText($"{provider}: {provider.IsBadProvider(Scope.User)}{Environment.NewLine}");
+            }
+        }
+
         private void Versuch7()
         {
             foreach (var provider in Provider.EnumerateProviders())
@@ -59,19 +72,6 @@ namespace Versuche
                     }
                 }
             }
-        }
-
-        private void Versuch6()
-        {
-            foreach (CspTool.Container.KeyTypes keyType in Enum.GetValues(typeof(CspTool.Container.KeyTypes)))
-            {
-                foreach (CspTool.Container.RsaDss rsaDss in Enum.GetValues(typeof(CspTool.Container.RsaDss)))
-                {
-                    var directory = CspTool.Container.GetKeyDiretory(keyType, rsaDss);
-                    Ausgabe.AppendText($"{directory}: {Directory.Exists(directory)}{Environment.NewLine}");
-                }
-            }
-
         }
 
         private void Versuch5()

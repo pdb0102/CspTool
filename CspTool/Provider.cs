@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -79,9 +82,32 @@ namespace amaic.de.csptool
             return Container.EnumerateContainers(this, scope);
         }
 
+        public bool IsBadProvider(Scope scope)
+        {
+            var testFreezingFilePath = Path.Combine( 
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "TestFreezing.exe"
+                );
+
+            var startInfo = new ProcessStartInfo(testFreezingFilePath, $"\"{Name}\" {(int)ProviderType.Id} {(int)scope}");
+            startInfo.CreateNoWindow = true;
+            startInfo.UseShellExecute = false;
+            var testFreezing = Process.Start(startInfo);
+
+            if (testFreezing.WaitForExit(500))
+            {
+                return false;
+            }
+            else
+            {
+                testFreezing.Kill();
+                return true;
+            }
+        }
+
         public override string ToString()
         {
-            return Name;
+            return $"{Name} {ProviderType}";
         }
 
 

@@ -8,7 +8,7 @@ namespace amaic.de.csptool
 {
     public enum Scope
     {
-        User,
-        Machine
+        User = 0,
+        Machine = 1
     }
 }

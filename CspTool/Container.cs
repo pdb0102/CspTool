@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -164,7 +165,7 @@ namespace amaic.de.csptool
 
         public override string ToString()
         {
-            return Name;
+            return $"{Name} [{Provider}, {Scope}]";
         }
 
         public static IEnumerable<Container> EnumerateContainers(ProviderType.Ids providerTypeId, Scope scope)
@@ -232,6 +233,17 @@ namespace amaic.de.csptool
             return Encoding.ASCII.GetString(providerName).TrimEnd('\0');
         }
 
+        public static ProviderHandle GetProviderHandle(string providerName, ProviderType.Ids providerTypeId, Scope scope)
+        {
+            var acFlags = CryptAcquireContextFlags.NULL;
+            if (scope == Scope.Machine) acFlags |= CryptAcquireContextFlags.CRYPT_MACHINE_KEYSET;
+
+            ProviderHandle providerHandle;
+            if (CryptAcquireContext(out providerHandle, null, providerName, providerTypeId, acFlags) == false)
+                throw new Win32Exception();
+
+            return providerHandle;
+        }
         static ProviderHandle GetProviderHandle(string containerName, string providerName, ProviderType.Ids providerTypeId, CryptAcquireContextFlags acFlags)
         {
             ProviderHandle providerHandle;
@@ -241,7 +253,7 @@ namespace amaic.de.csptool
             return providerHandle;
         }
 
-        public static string GetKeyDiretory(KeyTypes keyType, RsaDss rsaDss)
+        static string GetKeyDiretory(KeyTypes keyType, RsaDss rsaDss)
         {
             var rsaDssSubfolder = rsaDss == RsaDss.RSA ? "RSA" : "DSS";
 
@@ -292,7 +304,7 @@ namespace amaic.de.csptool
             }
         }
 
-        public enum KeyTypes
+        enum KeyTypes
         {
             UserPrivate,
             LocalSystemPrivate,
@@ -301,7 +313,7 @@ namespace amaic.de.csptool
             SharedPrivate
         }
 
-        public enum RsaDss
+        enum RsaDss
         {
             RSA,
             DSS
