@@ -27,7 +27,7 @@ namespace Versuche
         private void Form1_Load(object sender, EventArgs e)
         {
 #if DEBUG
-            Versuch8();
+            Versuch7();
 #endif
         }
 
@@ -45,7 +45,34 @@ namespace Versuche
             }
         }
 
-        private void Versuch7()
+        private async void Versuch7()
+        {
+            try
+            {
+                foreach (var provider in Provider.EnumerateProviders())
+                {
+                    foreach (Scope scope in Enum.GetValues(typeof(Scope)))
+                    {
+                        foreach (var container in provider.EnumerateContainers(scope))
+                        {
+                            var containerfilePathTask = Task.Run(() => container.FilePath);
+                            try
+                            {
+                                var containerfilePath = await containerfilePathTask;
+                                Ausgabe.AppendText($"{containerfilePath}: {File.Exists(containerfilePath)}{Environment.NewLine}");
+                            }
+                            catch (Win32Exception ausnahmefehler)
+                            {
+                                Ausgabe.AppendText($"{container.Name}: {ausnahmefehler.Message}{Environment.NewLine}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ObjectDisposedException) { }
+        }
+
+        IEnumerable<string> EnumerateProviderFilePaths()
         {
             foreach (var provider in Provider.EnumerateProviders())
             {
@@ -53,22 +80,17 @@ namespace Versuche
                 {
                     foreach (var container in provider.EnumerateContainers(scope))
                     {
+                        string providerFilePath;
                         try
                         {
                             var filePath = container.FilePath;
-                            if(filePath == @"C:\ProgramData\Microsoft\Crypto\RSA\S-1-5-18\fc1e3851f429ea606d6ff1e01a5229f1_87e3ec08-4530-49c5-845d-79692c4e3213")
-                            {
-
-                            }
-                            Debug.Print($"{filePath}{Environment.NewLine}");
-                            //Ausgabe.AppendText($"{container.FilePath}{Environment.NewLine}");
+                            providerFilePath = $"{filePath}: {File.Exists(filePath)}{Environment.NewLine}";
                         }
                         catch (Win32Exception ausnahmefehler)
                         {
-                            Debug.Print($"{container.Name}: {ausnahmefehler.Message}{Environment.NewLine}");
-                            //Thread.Sleep(1000);
-                            //Ausgabe.AppendText($"{container.Name}: {ausnahmefehler.Message}{Environment.NewLine}");
+                            providerFilePath = $"{container.Name}: {ausnahmefehler.Message}{Environment.NewLine}";
                         }
+                        yield return providerFilePath;
                     }
                 }
             }

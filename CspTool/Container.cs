@@ -71,7 +71,7 @@ namespace amaic.de.csptool
 
         KeyTypes GetKeyType()
         {
-            return Scope == Scope.Machine ? KeyTypes.LocalSystemPrivate : KeyTypes.UserPrivate;
+            return Scope == Scope.Machine ? KeyTypes.SharedPrivate : KeyTypes.UserPrivate;
         }
 
         RsaDss GetRsaDss()
@@ -182,6 +182,8 @@ namespace amaic.de.csptool
         {
             if (provider == null) throw new ArgumentNullException(nameof(provider));
 
+            if (provider.IsBadProvider(scope)) return new Container[0];
+
             return EnumerateContainers(provider.Name, provider.ProviderType.Id, scope);
         }
         public static IEnumerable<Container> EnumerateContainers(string providerName, ProviderType.Ids providerTypeId, Scope scope)
@@ -255,53 +257,45 @@ namespace amaic.de.csptool
 
         static string GetKeyDiretory(KeyTypes keyType, RsaDss rsaDss)
         {
-            var rsaDssSubfolder = rsaDss == RsaDss.RSA ? "RSA" : "DSS";
+            var baseDirectory = 
+                keyType == KeyTypes.UserPrivate ? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) : Environment.GetEnvironmentVariable("ALLUSERSPROFILE");
 
+            var rsaDssSubfolder = 
+                rsaDss == RsaDss.RSA ? "RSA" : "DSS";
+
+            string userSubfolder;
             switch (keyType)
             {
                 case KeyTypes.UserPrivate:
-                    return Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        @"Microsoft\Crypto",
-                        rsaDssSubfolder,
-                        WindowsIdentity.GetCurrent().User.Value
-                        );
+                    userSubfolder = WindowsIdentity.GetCurrent().User.Value;
+                    break;
 
                 case KeyTypes.LocalSystemPrivate:
-                    return Path.Combine(
-                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
-                        @"Microsoft\Crypto",
-                        rsaDssSubfolder,
-                        "S-1-5-18"
-                        );
+                    userSubfolder = "S-1-5-18";
+                    break;
 
                 case KeyTypes.LocalServicePrivate:
-                    return Path.Combine(
-                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
-                        @"Microsoft\Crypto",
-                        rsaDssSubfolder,
-                        "S-1-5-19"
-                        );
+                    userSubfolder = "S-1-5-19";
+                    break;
 
                 case KeyTypes.NetworkServicePrivate:
-                    return Path.Combine(
-                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
-                        @"Microsoft\Crypto",
-                        rsaDssSubfolder,
-                        "S-1-5-20"
-                        );
+                    userSubfolder = "S-1-5-20";
+                    break;
 
                 case KeyTypes.SharedPrivate:
-                    return Path.Combine(
-                        Environment.GetEnvironmentVariable("ALLUSERSPROFILE"),
-                        @"Microsoft\Crypto",
-                        rsaDssSubfolder,
-                        "MachineKeys"
-                        );
+                    userSubfolder = "MachineKeys";
+                    break;
 
                 default:
                     throw new NotImplementedException();
             }
+
+            return Path.Combine(
+                baseDirectory,
+                @"Microsoft\Crypto",
+                rsaDssSubfolder,
+                userSubfolder
+                );
         }
 
         enum KeyTypes

@@ -82,9 +82,10 @@ namespace amaic.de.csptool
             return Container.EnumerateContainers(this, scope);
         }
 
-        public bool IsBadProvider(Scope scope)
+        Dictionary<Scope, bool> _IsBadProvider = new Dictionary<Scope, bool>();
+        public void RefreshIsBadProvider(Scope scope)
         {
-            var testFreezingFilePath = Path.Combine( 
+            var testFreezingFilePath = Path.Combine(
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                 "TestFreezing.exe"
                 );
@@ -94,22 +95,31 @@ namespace amaic.de.csptool
             startInfo.UseShellExecute = false;
             var testFreezing = Process.Start(startInfo);
 
+            if (_IsBadProvider.ContainsKey(scope) == false)
+                _IsBadProvider.Add(scope, false);
+
             if (testFreezing.WaitForExit(500))
             {
-                return false;
+                _IsBadProvider[scope] = false;
             }
             else
-            {
+            { 
                 testFreezing.Kill();
-                return true;
+                _IsBadProvider[scope] = true;
             }
+        }
+        public bool IsBadProvider(Scope scope)
+        {
+            if (_IsBadProvider.ContainsKey(scope) == false)
+                RefreshIsBadProvider(scope);
+
+            return _IsBadProvider[scope];
         }
 
         public override string ToString()
         {
             return $"{Name} {ProviderType}";
         }
-
 
         public static IEnumerable<Provider> EnumerateProviders()
         {
